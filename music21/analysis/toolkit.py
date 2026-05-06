@@ -189,6 +189,8 @@ class AnalysisPipeline:
         jobs: int | None = None,
         use_cache: bool = True,
     ) -> list[AnalysisResult]:
+        if jobs is not None and jobs < 1:
+            raise AnalysisToolkitException('jobs must be >= 1')
         if jobs and jobs != 1:
             return joblib.Parallel(n_jobs=jobs)(
                 joblib.delayed(_analyze_source)(source, self.config) for source in sources
@@ -281,7 +283,7 @@ def _analyze_key(score: stream.Score, warnings: list[str]) -> dict[str, t.Any] |
         warnings.append(f'key analysis failed: {exc}')
         return None
     if analyzed_key is None:
-        warnings.append('key analysis returned no result')
+        warnings.append('key analysis returned no result (insufficient pitch data)')
         return None
     return {
         'name': analyzed_key.tonicPitchNameWithCase,
@@ -496,6 +498,15 @@ def _annotate_with_chords(score: stream.Score, events: Iterable[ChordEvent]) -> 
     return analysis_score
 
 
+def _source_stem(source: t.Any) -> str:
+    source_str = str(source)
+    path = pathlib.Path(source_str)
+    if path.exists():
+        return path.stem
+    sanitized = source_str.replace('/', '_').replace('\\', '_')
+    return sanitized or 'analysis'
+
+
 def _write_json(results: Sequence[AnalysisResult], output: t.TextIO | None) -> None:
     payload = [result.to_dict() for result in results]
     data = json.dumps(payload, ensure_ascii=False, indent=2)
@@ -605,7 +616,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         annotation_dir.mkdir(parents=True, exist_ok=True)
         for source in args.sources:
             annotated = pipeline.build_annotation_score(source)
-            name = pathlib.Path(str(source)).stem or 'analysis'
+            name = _source_stem(source)
             output_file = annotation_dir / f'{name}_analysis.musicxml'
             annotated.write('musicxml', fp=str(output_file))
 
