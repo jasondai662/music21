@@ -190,6 +190,9 @@ class AnalysisPipeline:
         jobs: int | None = None,
         use_cache: bool = True,
     ) -> list[AnalysisResult]:
+        '''
+        Analyze multiple sources. Cache is only used for sequential execution.
+        '''
         if jobs is not None and jobs < 1:
             raise AnalysisToolkitException('jobs must be >= 1')
         if jobs and jobs != 1:
@@ -318,7 +321,10 @@ def _collect_chord_events(reduction_part: stream.Part) -> list[ChordEvent]:
     for chord_obj in reduction_part.recurse().getElementsByClass(chord.Chord):
         measure = chord_obj.getContextByClass(stream.Measure)
         measure_number = measure.number if measure else None
-        offset_in_measure = float(chord_obj.offset)
+        if measure is not None:
+            offset_in_measure = float(chord_obj.getOffsetInHierarchy(measure))
+        else:
+            offset_in_measure = float(chord_obj.offset)
         offset = float(chord_obj.getOffsetInHierarchy(reduction_part))
         duration = float(chord_obj.duration.quarterLength)
         events.append(ChordEvent(offset, measure_number, offset_in_measure, duration, chord_obj))
@@ -469,8 +475,10 @@ def _analyze_structure(
         warnings.append('structure analysis found no segments')
         return None
     segment_summaries = []
+    empty_segments = 0
     for segment in segments:
         if not segment:
+            empty_segments += 1
             continue
         start_note = segment[0]
         end_note = segment[-1]
@@ -483,6 +491,8 @@ def _analyze_structure(
             'endMeasure': end_measure.number if end_measure else None,
             'noteCount': len(segment),
         })
+    if empty_segments:
+        warnings.append(f'structure analysis skipped {empty_segments} empty segments')
     return {
         'segmentCount': len(segment_summaries),
         'segments': segment_summaries,
@@ -504,8 +514,11 @@ def _source_stem(source: t.Any) -> str:
     path = pathlib.Path(source_str)
     if path.exists():
         return path.stem
-    sanitized = re.sub(r'[^A-Za-z0-9._-]+', '_', source_str)
-    return sanitized.strip('_') or 'analysis'
+    sanitized = re.sub(r'[^A-Za-z0-9_-]+', '_', source_str)
+    sanitized = sanitized.strip('._')
+    if sanitized in ('', '.', '..'):
+        return 'analysis'
+    return sanitized
 
 
 def _write_json(results: Sequence[AnalysisResult], output: t.TextIO | None) -> None:

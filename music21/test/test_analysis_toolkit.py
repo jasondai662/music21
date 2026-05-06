@@ -44,8 +44,14 @@ class Test(unittest.TestCase):
         pipeline = toolkit.AnalysisPipeline()
         annotated = pipeline.build_annotation_score(score)
         self.assertIsInstance(annotated, stream.Score)
-        analysis_parts = [part for part in annotated.parts if part.id == 'analysis']
-        self.assertTrue(analysis_parts)
+        self.assertTrue(any(part.id == 'analysis' for part in annotated.parts))
+
+    def test_melody_warning_for_rest_only(self):
+        score = converter.parse('tinyNotation: 4/4 r1 r1')
+        pipeline = toolkit.AnalysisPipeline()
+        result = pipeline.analyze(score)
+        self.assertIsNone(result.melody)
+        self.assertTrue(any('melody analysis found no notes' in w for w in result.warnings))
 
     def test_batch_analyze_invalid_jobs(self):
         pipeline = toolkit.AnalysisPipeline()
