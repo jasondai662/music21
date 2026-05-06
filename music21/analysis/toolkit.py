@@ -21,6 +21,7 @@ import argparse
 import csv
 import json
 import pathlib
+import re
 import sys
 import typing as t
 
@@ -423,12 +424,12 @@ def _extract_interval_motifs(
     motif_counter: Counter[tuple[str, ...]] = Counter()
     for idx in range(len(interval_names) - motif_length + 1):
         motif_counter[tuple(interval_names[idx:idx + motif_length])] += 1
-    motifs = [
+    motifs: list[dict[str, t.Any]] = [
         {'pattern': list(pattern), 'count': count}
         for pattern, count in motif_counter.items()
         if count >= min_count
     ]
-    motifs.sort(key=lambda item: (-t.cast(int, item['count']), item['pattern']))
+    motifs.sort(key=lambda item: (-item['count'], item['pattern']))
     return motifs
 
 
@@ -503,8 +504,8 @@ def _source_stem(source: t.Any) -> str:
     path = pathlib.Path(source_str)
     if path.exists():
         return path.stem
-    sanitized = source_str.replace('/', '_').replace('\\', '_')
-    return sanitized or 'analysis'
+    sanitized = re.sub(r'[^A-Za-z0-9._-]+', '_', source_str)
+    return sanitized.strip('_') or 'analysis'
 
 
 def _write_json(results: Sequence[AnalysisResult], output: t.TextIO | None) -> None:
