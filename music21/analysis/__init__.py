@@ -16,6 +16,7 @@ __all__ = [
     'reduceChordsOld',
     'reduction',
     'segmentByRests',
+    'toolkit',
     'transposition',
     'windowed',
 ]
@@ -36,8 +37,8 @@ from music21.analysis import reduceChords
 from music21.analysis import reduceChordsOld
 from music21.analysis import reduction
 from music21.analysis import segmentByRests
+from music21.analysis import toolkit
 from music21.analysis import transposition
 from music21.analysis import windowed
 
 from music21.exceptions21 import AnalysisException
-

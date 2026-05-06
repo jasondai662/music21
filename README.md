@@ -28,6 +28,18 @@ on Py3.5, v6 on Py3.6, v7 on Py3.7, v8 on Py3.8/Py3.9, and v9 on Py3.10)
 
 [Module Documentation](https://www.music21.org/music21docs/moduleReference/index.html)
 
+## Analysis Toolkit (Experimental) ##
+
+`music21.analysis.toolkit` provides a configurable pipeline and CLI for common
+analysis tasks (key, harmony, melody, rhythm, and structure) with JSON or CSV
+outputs and optional MusicXML annotation exports.
+
+Example:
+
+```
+python -m music21.analysis.toolkit path/to/score.musicxml --output analysis.json
+```
+
 ## Mailing list ##
 
 See: https://groups.google.com/forum/#!forum/music21list
