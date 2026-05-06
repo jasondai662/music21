@@ -46,3 +46,8 @@ class Test(unittest.TestCase):
         self.assertIsInstance(annotated, stream.Score)
         analysis_parts = [part for part in annotated.parts if part.id == 'analysis']
         self.assertTrue(analysis_parts)
+
+    def test_batch_analyze_invalid_jobs(self):
+        pipeline = toolkit.AnalysisPipeline()
+        with self.assertRaises(toolkit.AnalysisToolkitException):
+            pipeline.batch_analyze(['dummy'], jobs=0)
